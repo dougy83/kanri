@@ -323,6 +323,7 @@ import { useConfirmDialog } from "@vueuse/core";
 //@ts-expect-error this library doesn't have types
 import { Container, Draggable } from "vue3-smooth-dnd";
 import { useI18n } from "vue-i18n";
+import { generateUniqueID } from "@/utils/idGenerator";
 import { useBoard } from "@/composables/useBoard";
 import { useBackgroundImage } from "@/composables/useBackgroundImage";
 
@@ -639,6 +640,21 @@ const handleAddSubtaskFromNew = (name: string) => {
 
   const newCard = board.createCardInFirstColumn(name);
   if (!newCard || !newCard.id) return;
+
+  // Find or create a "Subtask" global tag
+  let subtag = boardContent.value.globalTags?.find(t => t.text === "Subtask");
+  if (!subtag) {
+    subtag = { id: generateUniqueID(), text: "Subtask" };
+    board.addGlobalTag(subtag);
+  }
+
+  // Apply the "Subtask" tag to the new card
+  const newCardCol = board.findCardColumn(newCard.id);
+  if (newCardCol) {
+    board.mutateCard(newCardCol.id, newCard.id, (c) => {
+      c.tags = [subtag!];
+    });
+  }
 
   const col = board.findCardColumn(card.id);
   if (!col) return;
