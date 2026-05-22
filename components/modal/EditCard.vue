@@ -481,10 +481,18 @@ limitations under the License.
                 :key="sub.cardId"
                 class="flex w-full flex-row items-center justify-between gap-4"
               >
-                <span class="text-no-overflow ml-0.5 text-sm">
-                  <span v-if="sub.card" class="text-dim-3">#{{ sub.card.sequenceNumber }}</span>
-                  <span v-if="sub.card" class="ml-1">{{ sub.card.name }}</span>
+                <span class="text-no-overflow ml-0.5 flex items-center gap-1.5 text-sm">
+                  <span v-if="sub.card" class="text-dim-3 shrink-0">#{{ sub.card.sequenceNumber }}</span>
+                  <span v-if="sub.card" class="truncate">{{ sub.card.name }}</span>
                   <span v-else class="italic text-red-400">(missing)</span>
+                  <span
+                    v-if="sub.columnTitle"
+                    class="inline-block max-w-[10ch] shrink-0 truncate rounded-xl px-1.5 py-0.5 text-xs"
+                    :style="{ backgroundColor: interpolateSubtaskTagColor(subtaskTotalColumns > 1 ? sub.columnIndex / (subtaskTotalColumns - 1) : 0.5) }"
+                    :class="getContrast(
+                      interpolateSubtaskTagColor(subtaskTotalColumns > 1 ? sub.columnIndex / (subtaskTotalColumns - 1) : 0.5)
+                    )"
+                  >{{ sub.columnTitle }}</span>
                 </span>
                 <div class="ml-1 flex shrink-0 flex-row items-end gap-1 self-center">
                   <button
@@ -611,6 +619,7 @@ import type { Ref } from "vue";
 
 import emitter from "@/utils/emitter";
 import { generateUniqueID } from "@/utils/idGenerator";
+import { getContrast } from "@/utils/colorUtils";
 import { SwatchIcon } from "@heroicons/vue/24/outline";
 import { CheckIcon, ChevronDownIcon, PlusIcon, XMarkIcon } from "@heroicons/vue/24/solid";
 import {
@@ -935,19 +944,50 @@ const subtaskSearchQuery = ref("");
 
 const boardsStore = useBoardsStore();
 
+// Three anchor colours for the subtask column tag spectrum:
+// muted blue -> yellow/orange -> green
+const SUBTASK_TAG_COLORS = [
+  { r: 107, g: 139, b: 206 },   // muted blue
+  { r: 212, g: 168, b: 67 },    // yellow/orange
+  { r: 107, g: 163, b: 107 },   // green
+];
+
+function interpolateSubtaskTagColor(t: number): string {
+  let r: number, g: number, b: number;
+  if (t <= 0.5) {
+    const u = t * 2;
+    r = SUBTASK_TAG_COLORS[0].r + (SUBTASK_TAG_COLORS[1].r - SUBTASK_TAG_COLORS[0].r) * u;
+    g = SUBTASK_TAG_COLORS[0].g + (SUBTASK_TAG_COLORS[1].g - SUBTASK_TAG_COLORS[0].g) * u;
+    b = SUBTASK_TAG_COLORS[0].b + (SUBTASK_TAG_COLORS[1].b - SUBTASK_TAG_COLORS[0].b) * u;
+  } else {
+    const u = (t - 0.5) * 2;
+    r = SUBTASK_TAG_COLORS[1].r + (SUBTASK_TAG_COLORS[2].r - SUBTASK_TAG_COLORS[1].r) * u;
+    g = SUBTASK_TAG_COLORS[1].g + (SUBTASK_TAG_COLORS[2].g - SUBTASK_TAG_COLORS[1].g) * u;
+    b = SUBTASK_TAG_COLORS[1].b + (SUBTASK_TAG_COLORS[2].b - SUBTASK_TAG_COLORS[1].b) * u;
+  }
+  const toHex = (x: number) => Math.round(x).toString(16).padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+const subtaskTotalColumns = computed(() => {
+  const board = boardsStore.boardById(props.boardId);
+  return board ? board.columns.length : 0;
+});
+
 const subtasks = computed(() => {
   const ids = props.card?.subtaskCardIds ?? [];
   if (ids.length === 0) return [];
 
   const board = boardsStore.boardById(props.boardId);
-  if (!board) return ids.map(id => ({ cardId: id, card: null as Card | null }));
+  if (!board) return ids.map(id => ({ cardId: id, card: null as Card | null, columnTitle: null as string | null, columnIndex: -1 }));
 
   return ids.map(id => {
-    for (const col of board.columns) {
+    for (let i = 0; i < board.columns.length; i++) {
+      const col = board.columns[i];
       const card = col.cards.find(c => c.id === id);
-      if (card) return { cardId: id, card };
+      if (card) return { cardId: id, card, columnTitle: col.title, columnIndex: i };
     }
-    return { cardId: id, card: null as Card | null };
+    return { cardId: id, card: null as Card | null, columnTitle: null as string | null, columnIndex: -1 };
   });
 });
 
