@@ -478,7 +478,7 @@ limitations under the License.
             >
               <div
                 v-for="sub in subtasks"
-                :key="sub.card.id"
+                :key="sub.cardId"
                 class="flex w-full flex-row items-center justify-between gap-4"
               >
                 <span class="text-no-overflow ml-0.5 text-sm">
