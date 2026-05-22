@@ -64,6 +64,7 @@ export declare interface Card {
   isDueDateCompleted?: boolean;
   name: string;
   sequenceNumber?: number;
+  subtaskCardIds?: string[];
   tasks?: Array<Task>;
   tags?: Array<Tag> | null;
 }

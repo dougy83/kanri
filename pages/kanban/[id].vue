@@ -44,7 +44,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
       v-show="editCardModalVisible"
       :card="currentlyActiveCardInfo.card"
       :column-id="currentlyActiveCardInfo.columnId"
+      :board-id="boardContent?.id ?? ''"
       :global-tags="boardContent?.globalTags ?? []"
+      :show-back-arrow="previousCardIds.length > 0"
       @closeModal="closeEditCardModal"
       @setCardColor="board.setCardColor"
       @setCardDescription="board.setCardDescription"
@@ -54,6 +56,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
       @setCardTags="board.setCardTags"
       @addGlobalTag="board.addGlobalTag"
       @openTagEdit="editTagModalVisible = true"
+      @editSubtaskCard="navigateToSubtaskCard"
+      @addSubtaskFromNew="handleAddSubtaskFromNew"
+      @addSubtaskFromExisting="handleAddSubtaskFromExisting"
+      @removeSubtask="handleRemoveSubtask"
+      @navigateBack="navigateBack"
     />
     <ModalRenameBoard
       v-show="renameBoardModalVisible"
@@ -349,6 +356,8 @@ const currentlyActiveCardInfo: {
   columnId: string;
 } = reactive({ card: null, columnId: "" });
 
+const previousCardIds: Array<{ cardId: string; columnId: string }> = [];
+
 const removeColumnModalVisible = ref(false);
 const removeCardModalVisible = ref(false);
 const removeAllColumnCardsModalVisible = ref(false);
@@ -569,6 +578,7 @@ const onDrop = (dropResult: object) => {
 
 // Kanban card modal
 const openEditCardModal = (columnId: string, el: Card) => {
+  previousCardIds.length = 0;
   currentlyActiveCardInfo.columnId = columnId;
   currentlyActiveCardInfo.card = el;
 
@@ -579,9 +589,96 @@ const openEditCardModal = (columnId: string, el: Card) => {
 };
 
 const closeEditCardModal = () => {
+  previousCardIds.length = 0;
   editCardModalVisible.value = false;
   draggingEnabled.value = true;
   emitter.emit("columnDraggingOn");
+};
+
+const navigateToSubtaskCard = (cardId: string) => {
+  if (!boardContent.value) return;
+
+  // Save current position before navigating
+  previousCardIds.push({
+    cardId: currentlyActiveCardInfo.card?.id ?? "",
+    columnId: currentlyActiveCardInfo.columnId,
+  });
+
+  // Find the target card's column
+  const col = board.findCardColumn(cardId);
+  if (!col) return;
+
+  const card = col.cards.find(c => c.id === cardId);
+  if (!card) return;
+
+  currentlyActiveCardInfo.columnId = col.id;
+  currentlyActiveCardInfo.card = card;
+};
+
+const navigateBack = () => {
+  if (previousCardIds.length === 0) return;
+
+  const prev = previousCardIds.pop()!;
+
+  if (!boardContent.value) return;
+
+  const col = boardContent.value.columns.find(c => c.id === prev.columnId);
+  if (!col) return;
+
+  const card = col.cards.find(c => c.id === prev.cardId);
+  if (!card) return;
+
+  currentlyActiveCardInfo.columnId = col.id;
+  currentlyActiveCardInfo.card = card;
+};
+
+const handleAddSubtaskFromNew = (name: string) => {
+  if (!boardContent.value) return;
+  const card = currentlyActiveCardInfo.card;
+  if (!card || !card.id) return;
+
+  const newCard = board.createCardInFirstColumn(name);
+  if (!newCard || !newCard.id) return;
+
+  const col = board.findCardColumn(card.id);
+  if (!col) return;
+
+  // Add the new card ID as a subtask reference
+  const subtaskIds = card.subtaskCardIds ? [...card.subtaskCardIds] : [];
+  subtaskIds.push(newCard.id);
+  board.mutateCard(col.id, card.id, (c) => {
+    c.subtaskCardIds = subtaskIds;
+  });
+};
+
+const handleAddSubtaskFromExisting = (subtaskCardId: string) => {
+  const card = currentlyActiveCardInfo.card;
+  if (!card || !card.id) return;
+
+  const col = board.findCardColumn(card.id);
+  if (!col) return;
+
+  const subtaskIds = card.subtaskCardIds ? [...card.subtaskCardIds] : [];
+  // Avoid duplicates
+  if (!subtaskIds.includes(subtaskCardId)) {
+    subtaskIds.push(subtaskCardId);
+  }
+  board.mutateCard(col.id, card.id, (c) => {
+    c.subtaskCardIds = subtaskIds;
+  });
+};
+
+const handleRemoveSubtask = (subtaskCardId: string) => {
+  const card = currentlyActiveCardInfo.card;
+  if (!card || !card.id) return;
+
+  const col = board.findCardColumn(card.id);
+  if (!col) return;
+
+  const subtaskIds = (card.subtaskCardIds ?? []).filter(id => id !== subtaskCardId);
+  board.mutateCard(col.id, card.id, (c) => {
+    c.subtaskCardIds = subtaskIds;
+  });
 };
 
 const removeCardWithConfirmation = async (

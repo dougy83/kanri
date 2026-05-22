@@ -49,6 +49,7 @@ const kanriCardSchema = z.object({
   id: z.string().optional(),
   name: z.string(),
   sequenceNumber: z.number().optional(),
+  subtaskCardIds: z.array(z.string()).optional(),
   tasks: z
     .array(
       z.object({

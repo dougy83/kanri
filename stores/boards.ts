@@ -377,6 +377,52 @@ export const useBoardsStore = defineStore("boards", {
       sourceBoard.lastEdited = new Date();
     },
 
+    // Create a card in the first column of a board (used for subtask "Add New")
+    createCardInFirstColumn(boardId: string, name: string) {
+      const b = this.boardById(boardId);
+      if (!b) return null;
+
+      if (b.columns.length === 0) return null;
+
+      const col = b.columns[0];
+      const card: Card = {
+        id: generateUniqueID(),
+        name,
+        description: "",
+        color: "",
+        tasks: [],
+        dueDate: null,
+        isDueDateCounterRelative: false,
+        isDueDateCompleted: false,
+        tags: [],
+      };
+
+      // Assign sequence number
+      if (b.nextSequenceNumber === undefined || b.nextSequenceNumber === null) {
+        this._backfillBoardSequenceCounters(boardId);
+      }
+      card.sequenceNumber = b.nextSequenceNumber;
+      b.nextSequenceNumber++;
+
+      col.cards.push(card);
+      b.lastEdited = new Date();
+
+      return card;
+    },
+
+    // Find which column a card belongs to
+    findCardColumn(boardId: string, cardId: string): Column | null {
+      const b = this.boardById(boardId);
+      if (!b) return null;
+
+      for (const col of b.columns) {
+        if (col.cards.find(c => c.id === cardId)) {
+          return col;
+        }
+      }
+      return null;
+    },
+
     // Initialize nextSequenceNumber on boards that don't have one yet
     _backfillSequenceCounters() {
       for (const board of this.boards) {

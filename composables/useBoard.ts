@@ -201,6 +201,30 @@ export function useBoard(id: string | Ref<string>) {
     });
   };
 
+  // Subtask helpers
+  function createCardInFirstColumn(name: string) {
+    if (!board.value) return null;
+    return store.createCardInFirstColumn(board.value.id, name);
+  }
+
+  function findCardColumn(cardId: string) {
+    if (!board.value) return null;
+    return store.findCardColumn(board.value.id, cardId);
+  }
+
+  function getAllCardsExcept(cardId: string) {
+    if (!board.value) return [];
+    const cards: Card[] = [];
+    for (const col of board.value.columns) {
+      for (const card of col.cards) {
+        if (card.id !== cardId) {
+          cards.push(card);
+        }
+      }
+    }
+    return cards;
+  }
+
   // (Global) Card Tags
   const addGlobalTag = (tag: Tag) => {
     if (!board.value) return;
@@ -257,6 +281,11 @@ export function useBoard(id: string | Ref<string>) {
     setCardTasks,
     setCardDueDate,
     setCardTags,
+
+    // subtask helpers
+    createCardInFirstColumn,
+    findCardColumn,
+    getAllCardsExcept,
 
     // global tags
     addGlobalTag,

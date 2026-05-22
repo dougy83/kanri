@@ -22,6 +22,7 @@ limitations under the License.
       $emit('closeModal', columnID);
       titleEditing = false;
       taskAddMode = false;
+      subtaskAddMode = 'none';
       showCustomColorPopup = false;
       emitter.emit('columnDraggingOn');
     "
@@ -37,7 +38,7 @@ limitations under the License.
                 <Tooltip direction="top" :label="$t('modals.editCard.tooltip')">
                   <template #trigger>
                     <button
-                      class="size-7 rounded-full flex items-center justify-center"
+                      class="flex size-7 items-center justify-center rounded-full"
                       :class="[isCustomColor ? '' : selectedColor]"
                       :style="{
                         'background-color': isCustomColor ? customColor : '',
@@ -189,7 +190,7 @@ limitations under the License.
                           v-model="customColor"
                           class="w-20"
                           type="color"
-                        />
+                        >
                         <HexColorInput v-model="customColor" />
                       </div>
                     </div>
@@ -216,16 +217,24 @@ limitations under the License.
                 @keypress.enter="updateTitle"
               />
             </div>
-            <XMarkIcon
-              class="text-accent-hover size-6 shrink-0 cursor-pointer"
-              @click="
-                $emit('closeModal', columnID);
-                titleEditing = false;
-                taskAddMode = false;
-                showCustomColorPopup = false;
-                emitter.emit('columnDraggingOn');
-              "
-            />
+            <div class="flex flex-row items-center gap-2">
+              <PhArrowLeft
+                v-if="showBackArrow"
+                class="text-accent-hover size-6 shrink-0 cursor-pointer"
+                @click="$emit('navigateBack')"
+              />
+              <XMarkIcon
+                class="text-accent-hover size-6 shrink-0 cursor-pointer"
+                @click="
+                  $emit('closeModal', columnID);
+                  titleEditing = false;
+                  taskAddMode = false;
+                  showCustomColorPopup = false;
+                  subtaskAddMode = 'none';
+                  emitter.emit('columnDraggingOn');
+                "
+              />
+            </div>
           </div>
           <div class="flex flex-row items-center gap-2">
             <VDatePicker
@@ -250,7 +259,7 @@ limitations under the License.
               <template #footer>
                 <div class="w-full px-4 pb-3">
                   <div class="mt-2 flex flex-col gap-2">
-                    <div class="flex flex-row items-center gap-6 mb-2">
+                    <div class="mb-2 flex flex-row items-center gap-6">
                       <SwitchRoot
                         v-model:checked="isDueDateCounterRelative"
                         class="bg-elevation-2 bg-accent-checked relative flex h-[24px] w-[42px] cursor-pointer rounded-full shadow-sm focus-within:outline focus-within:outline-black"
@@ -325,8 +334,8 @@ limitations under the License.
                   drag-handle-selector=".task-drag"
                   lock-axis="y"
                   orientation="vertical"
-                  @drop="onTaskDrop"
                   :get-child-payload="(index: number) => tasks[index]"
+                  @drop="onTaskDrop"
                 >
                   <Draggable
                     v-for="(task, index) in tasks"
@@ -364,7 +373,7 @@ limitations under the License.
                           type="text"
                           @blur="updateTask(index)"
                           @keypress.enter="updateTask(index)"
-                        />
+                        >
                         <ClickCounter
                           v-else
                           @double-click="enableTaskEditMode(index, task)"
@@ -426,7 +435,7 @@ limitations under the License.
                 :placeholder="$t('modals.editCard.newTaskPlaceholder')"
                 type="text"
                 @keypress.enter="createTask"
-              />
+              >
               <div v-if="taskAddMode" class="ml-0.5 mt-0.5 flex flex-row gap-4">
                 <button
                   class="bg-accent text-buttons rounded-md px-4 py-1"
@@ -451,6 +460,124 @@ limitations under the License.
                 <PlusIcon class="text-accent size-6" />
                 <span>{{ $t("modals.editCard.taskAdd") }}</span>
               </button>
+            </div>
+          </div>
+          <div class="mt-4 flex flex-col pr-6">
+            <div class="mb-1 flex flex-row items-center gap-2">
+              <h2 class="text-lg font-semibold">
+                Subtasks
+              </h2>
+              <span
+                v-if="subtasks.length !== 0"
+                class="text-dim-1 text-sm"
+              >({{ subtasks.length }})</span>
+            </div>
+            <div
+              v-if="subtasks.length > 0"
+              class="mb-2 flex max-h-[120px] flex-col gap-1 overflow-auto pr-2"
+            >
+              <div
+                v-for="sub in subtasks"
+                :key="sub.card.id"
+                class="flex w-full flex-row items-center justify-between gap-4"
+              >
+                <span class="text-no-overflow ml-0.5 text-sm">
+                  <span v-if="sub.card" class="text-dim-3">#{{ sub.card.sequenceNumber }}</span>
+                  <span v-if="sub.card" class="ml-1">{{ sub.card.name }}</span>
+                  <span v-else class="italic text-red-400">(missing)</span>
+                </span>
+                <div class="ml-1 flex shrink-0 flex-row items-end gap-1 self-center">
+                  <button
+                    v-if="sub.card"
+                    class="shrink-0"
+                    :title="'Edit card'"
+                    @click="$emit('editSubtaskCard', sub.card.id)"
+                  >
+                    <PhPencilSimple class="text-dim-2 text-accent-hover size-4" />
+                  </button>
+                  <button
+                    class="shrink-0"
+                    :title="'Unlink card'"
+                    @click="$emit('removeSubtask', sub.cardId)"
+                  >
+                    <PhLinkBreak class="text-dim-2 text-accent-hover size-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="flex flex-row gap-2">
+              <button
+                v-if="subtaskAddMode === 'none'"
+                class="bg-elevation-1 bg-elevation-2-hover flex h-min cursor-pointer flex-row items-center gap-2 rounded-md py-1 pl-0.5 pr-2"
+                @click="subtaskAddMode = 'new'"
+              >
+                <PlusIcon class="text-accent size-5" />
+                <span class="text-sm">+ Add New</span>
+              </button>
+              <button
+                v-if="subtaskAddMode === 'none'"
+                class="bg-elevation-1 bg-elevation-2-hover flex h-min cursor-pointer flex-row items-center gap-2 rounded-md py-1 pl-0.5 pr-2"
+                @click="subtaskAddMode = 'existing'"
+              >
+                <span class="text-sm">+ Add Existing</span>
+                <ChevronDownIcon class="text-dim-2 size-4" />
+              </button>
+            </div>
+            <div v-if="subtaskAddMode === 'new'" class="mt-2">
+              <input
+                v-model="newSubtaskName"
+                v-focus
+                class="bg-elevation-2 text-normal border-accent-focus pointer-events-auto w-full rounded-md p-1 text-base focus:border-2 focus:border-dotted focus:outline-none"
+                maxlength="1000"
+                placeholder="New subtask name..."
+                type="text"
+                @keypress.enter="handleAddNewSubtask"
+              >
+              <div class="ml-0.5 mt-0.5 flex flex-row gap-4">
+                <button
+                  class="bg-accent text-buttons rounded-md px-4 py-1 text-sm"
+                  @click="handleAddNewSubtask"
+                >
+                  {{ $t("general.addAction") }}
+                </button>
+                <button
+                  class="text-sm"
+                  @click="
+                    subtaskAddMode = 'none';
+                    newSubtaskName = '';
+                  "
+                >
+                  {{ $t("general.cancelAction") }}
+                </button>
+              </div>
+            </div>
+            <div v-if="subtaskAddMode === 'existing'" class="mt-2">
+              <input
+                v-model="subtaskSearchQuery"
+                v-focus
+                class="bg-elevation-2 text-normal border-accent-focus pointer-events-auto w-full rounded-md p-1 text-base focus:border-2 focus:border-dotted focus:outline-none"
+                placeholder="Filter by name or #..."
+                type="text"
+              >
+              <div
+                class="bg-elevation-1 mt-1 flex max-h-[180px] flex-col gap-0.5 overflow-auto rounded-md p-1"
+              >
+                <div
+                  v-for="avail in availableCardsFiltered"
+                  :key="avail.id"
+                  class="bg-elevation-2-hover cursor-pointer rounded-md px-2 py-1 text-sm"
+                  @click="selectExistingSubtask(avail.id)"
+                >
+                  <span class="text-dim-3">#{{ avail.sequenceNumber }}</span>
+                  <span class="ml-1">{{ avail.name }}</span>
+                </div>
+                <div
+                  v-if="availableCardsFiltered.length === 0"
+                  class="text-dim-3 px-2 py-1 text-sm"
+                >
+                  No matching cards
+                </div>
+              </div>
             </div>
           </div>
           <div class="mt-4 flex flex-col pr-6">
@@ -485,10 +612,12 @@ import type { Ref } from "vue";
 import emitter from "@/utils/emitter";
 import { generateUniqueID } from "@/utils/idGenerator";
 import { SwatchIcon } from "@heroicons/vue/24/outline";
-import { CheckIcon, PlusIcon, XMarkIcon } from "@heroicons/vue/24/solid";
+import { CheckIcon, ChevronDownIcon, PlusIcon, XMarkIcon } from "@heroicons/vue/24/solid";
 import {
+  PhArrowLeft,
   PhCalendar,
   PhCheck,
+  PhLinkBreak,
   PhPencilSimple,
   PhTrash,
   PhX,
@@ -498,12 +627,15 @@ import { vOnClickOutside } from "@vueuse/components";
 import { Container, Draggable } from "vue3-smooth-dnd";
 //@ts-expect-error library has no types
 import { VueTagsInput } from "@vojtechlanka/vue-tags-input";
+import { useBoardsStore } from "@/stores/boards";
 import { useSettingsStore } from "@/stores/settings";
 
 const props = defineProps<{
   card: Card | null;
   columnId: string;
+  boardId: string;
   globalTags: Array<Tag>;
+  showBackArrow: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -548,6 +680,11 @@ const emit = defineEmits<{
   ): void;
   (e: "addGlobalTag", tag: Tag): void;
   (e: "openTagEdit"): void;
+  (e: "editSubtaskCard", cardId: string): void;
+  (e: "addSubtaskFromNew", name: string): void;
+  (e: "addSubtaskFromExisting", cardId: string): void;
+  (e: "removeSubtask", cardId: string): void;
+  (e: "navigateBack"): void;
 }>();
 
 const { locale } = useI18n();
@@ -790,6 +927,72 @@ watch(customColor, (newVal, oldVal) => {
     setCardColor(columnID.value, props.card?.id, newVal);
   }
 });
+
+// Subtask state
+const subtaskAddMode = ref<"none" | "new" | "existing">("none");
+const newSubtaskName = ref("");
+const subtaskSearchQuery = ref("");
+
+const boardsStore = useBoardsStore();
+
+const subtasks = computed(() => {
+  const ids = props.card?.subtaskCardIds ?? [];
+  if (ids.length === 0) return [];
+
+  const board = boardsStore.boardById(props.boardId);
+  if (!board) return ids.map(id => ({ cardId: id, card: null as Card | null }));
+
+  return ids.map(id => {
+    for (const col of board.columns) {
+      const card = col.cards.find(c => c.id === id);
+      if (card) return { cardId: id, card };
+    }
+    return { cardId: id, card: null as Card | null };
+  });
+});
+
+const availableCards = computed(() => {
+  const board = boardsStore.boardById(props.boardId);
+  if (!board) return [];
+
+  const currentCardId = props.card?.id;
+  const existingSubtaskIds = props.card?.subtaskCardIds ?? [];
+  const cards: Card[] = [];
+
+  for (const col of board.columns) {
+    for (const card of col.cards) {
+      if (card.id && card.id !== currentCardId && !existingSubtaskIds.includes(card.id)) {
+        cards.push(card);
+      }
+    }
+  }
+
+  return cards;
+});
+
+const availableCardsFiltered = computed(() => {
+  const q = subtaskSearchQuery.value.trim().toLowerCase();
+  if (!q) return availableCards.value;
+
+  return availableCards.value.filter(card => {
+    const seqMatch = q.startsWith("#") && card.sequenceNumber?.toString() === q.slice(1);
+    const nameMatch = card.name.toLowerCase().includes(q);
+    return seqMatch || nameMatch;
+  });
+});
+
+const handleAddNewSubtask = () => {
+  if (newSubtaskName.value == null || !/\S/.test(newSubtaskName.value)) return;
+  emit("addSubtaskFromNew", newSubtaskName.value);
+  newSubtaskName.value = "";
+  subtaskAddMode.value = "none";
+};
+
+const selectExistingSubtask = (cardId: string) => {
+  emit("addSubtaskFromExisting", cardId);
+  subtaskSearchQuery.value = "";
+  subtaskAddMode.value = "none";
+};
 
 watch(props, (newVal) => {
   if (newVal) {
