@@ -45,11 +45,13 @@ export const useBoardsStore = defineStore("boards", {
       this.pins = (await tauri.get("pins")) || [];
       this.initialized = true;
 
+      this._backfillSequenceCounters();
       this._setupAutoSave();
     },
     async forceReloadBoards() {
       const tauri = useTauriStore().store;
       this.boards = (await tauri.get("boards")) || [];
+      this._backfillSequenceCounters();
     },
     async save() {
       const tauri = useTauriStore().store;
@@ -77,6 +79,8 @@ export const useBoardsStore = defineStore("boards", {
           board.createdAt = new Date();
         }
         this.boards.push(board);
+        // Backfill sequence numbers for any cards that don't have one (e.g. example cards)
+        this._backfillBoardSequenceCounters(board.id);
         return;
       }
 
@@ -266,6 +270,13 @@ export const useBoardsStore = defineStore("boards", {
       const col = b.columns.find(c => c.id === columnId);
       if (!col) return;
 
+      // Ensure nextSequenceNumber is initialized (scans existing cards for imported boards)
+      if (b.nextSequenceNumber === undefined || b.nextSequenceNumber === null) {
+        this._backfillBoardSequenceCounters(boardId);
+      }
+      card.sequenceNumber = b.nextSequenceNumber;
+      b.nextSequenceNumber++;
+
       if (addToTop) {
         col.cards.unshift(card);
       } else {
@@ -299,6 +310,14 @@ export const useBoardsStore = defineStore("boards", {
 
       copy.id = generateUniqueID();
       copy.name = `${copy.name} (copy)`;
+
+      // Assign a fresh sequence number to the duplicate
+      if (b.nextSequenceNumber === undefined || b.nextSequenceNumber === null) {
+        this._backfillBoardSequenceCounters(boardId);
+      }
+      copy.sequenceNumber = b.nextSequenceNumber;
+      b.nextSequenceNumber++;
+
       col.cards.push(copy);
       b.lastEdited = new Date();
     },
@@ -356,6 +375,22 @@ export const useBoardsStore = defineStore("boards", {
       targetCol.cards.push(card);
       targetBoard.lastEdited = new Date();
       sourceBoard.lastEdited = new Date();
+    },
+
+    // Initialize nextSequenceNumber on boards that don't have one yet
+    _backfillSequenceCounters() {
+      for (const board of this.boards) {
+        if (board.nextSequenceNumber !== undefined && board.nextSequenceNumber !== null) continue;
+        board.nextSequenceNumber = 1;
+      }
+    },
+
+    // Initialize nextSequenceNumber on a single board (for new boards)
+    _backfillBoardSequenceCounters(boardId: string) {
+      const board = this.boardById(boardId);
+      if (!board) return;
+      if (board.nextSequenceNumber !== undefined && board.nextSequenceNumber !== null) return;
+      board.nextSequenceNumber = 1;
     },
 
     // Debounced auto-save of board properties

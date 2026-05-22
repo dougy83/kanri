@@ -44,8 +44,12 @@ limitations under the License.
               @single-click="$emit('openEditCardModal', card)"
             >
               <hr v-if="name === '---'" class="mt-0.5" />
-              <p v-else ref="cardNameText">
-                {{ name }}
+              <p v-else ref="cardNameText" class="flex items-baseline gap-1.5">
+                <span
+                  v-if="props.card.sequenceNumber"
+                  class="text-dim-3 shrink-0 text-xs font-medium"
+                >#{{ props.card.sequenceNumber }}</span>
+                <span>{{ name }}</span>
               </p>
             </ClickCounter>
             <textarea

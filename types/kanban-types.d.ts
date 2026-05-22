@@ -27,6 +27,7 @@ export declare interface Board {
   createdAt?: Date | string;
   title: string;
   globalTags?: Array<Tag> | null;
+  nextSequenceNumber?: number;
 }
 
 export declare interface BackgroundSettings {
@@ -62,6 +63,7 @@ export declare interface Card {
   isDueDateCounterRelative?: boolean;
   isDueDateCompleted?: boolean;
   name: string;
+  sequenceNumber?: number;
   tasks?: Array<Task>;
   tags?: Array<Tag> | null;
 }

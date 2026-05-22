@@ -48,6 +48,7 @@ const kanriCardSchema = z.object({
   description: z.string().optional(),
   id: z.string().optional(),
   name: z.string(),
+  sequenceNumber: z.number().optional(),
   tasks: z
     .array(
       z.object({
@@ -83,6 +84,7 @@ export const kanriBoardSchema = z.object({
   id: z.string(),
   lastEdited: z.string().optional(),
   title: z.string(),
+  nextSequenceNumber: z.number().optional(),
 });
 
 export const kanbanElectronBoardSchema = z.object({
