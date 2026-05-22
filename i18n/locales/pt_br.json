@@ -39,6 +39,7 @@
       "exportBoardAction": "Exportar Quadro",
       "pinBoardAction": "Fixar Quadro",
       "unpinBoardAction": "Desafixar Quadro",
+      "addCardNumbersAction": "Adicionar Números aos Cartões",
       "deleteBoardAction": "Apagar Quadro",
       "deleteBoardConfirmation": "Tem certeza de que deseja excluir o quadro '{boardname}'? Esta ação é irreversível."
     },

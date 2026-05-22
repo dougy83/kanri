@@ -39,6 +39,7 @@
       "exportBoardAction": "Експортувати дошку",
       "pinBoardAction": "Закріпити дошку",
       "unpinBoardAction": "Відкріпити дошку",
+      "addCardNumbersAction": "Додати номери карток",
       "deleteBoardAction": "Видалити дошку",
       "deleteBoardConfirmation": "Ви впевнені, що хочете видалити дошку '{boardName}'? Цю дію неможливо скасувати."
     },

@@ -39,6 +39,7 @@
       "exportBoardAction": "Экспортировать доску",
       "pinBoardAction": "Закрепить доску",
       "unpinBoardAction": "Открепить доску",
+      "addCardNumbersAction": "Добавить номера карточек",
       "deleteBoardAction": "Удалить доску",
       "deleteBoardConfirmation": "Вы уверены, что хотите удалить доску {boardName}? Это действие нельзя отменить."
     },

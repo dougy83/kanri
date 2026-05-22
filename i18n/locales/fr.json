@@ -39,6 +39,7 @@
       "exportBoardAction": "Exporter le tableau",
       "pinBoardAction": "Epingler le tableau dans la barre latérale",
       "unpinBoardAction": "Désépingler le tableau de la barre latérale",
+      "addCardNumbersAction": "Ajouter des numéros de carte",
       "deleteBoardAction": "Supprimer le tableau",
       "deleteBoardConfirmation": "Êtes-vous sûr de vouloir supprimer le tableau '{boardName}' ? Cette action ne peut être annulée."
     },

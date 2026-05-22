@@ -39,6 +39,7 @@
       "exportBoardAction": "ส่งออกบอร์ด",
       "pinBoardAction": "ปักหมุดบอร์ด",
       "unpinBoardAction": "เลิกปักหมุดบอร์ด",
+      "addCardNumbersAction": "เพิ่มหมายเลขการ์ด",
       "deleteBoardAction": "ลบบอร์ด",
       "deleteBoardConfirmation": "คุณต้องการลบบอร์ด {boardName} ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้นะ"
     },

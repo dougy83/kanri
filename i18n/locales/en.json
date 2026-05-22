@@ -40,6 +40,7 @@
       "exportBoardAction": "Export Board",
       "pinBoardAction": "Pin Board",
       "unpinBoardAction": "Unpin Board",
+      "addCardNumbersAction": "Add Card Numbers",
       "deleteBoardAction": "Delete Board",
       "deleteBoardConfirmation": "Are you sure you want to delete the board '{boardName}'? This action is irreversible."
     },

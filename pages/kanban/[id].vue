@@ -208,7 +208,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <span v-else>{{ $t("pages.kanban.pinBoardAction") }}</span>
               </DropdownMenuItem>
               <div class="border-elevation-3 my-1 border-t"/>
-              <!-- Group 3: Danger zone -->
+              <!-- Group 3: Sequence numbers -->
+              <DropdownMenuItem
+                class="flex w-full cursor-pointer items-center gap-2 rounded-md px-4 py-1.5 pr-6 text-left"
+                :class="allCardsHaveNumbers ? 'text-dim-3 cursor-not-allowed' : 'bg-elevation-2-hover'"
+                :disabled="allCardsHaveNumbers"
+                @click="backfillBoardCardNumbers"
+              >
+                <span class="text-dim-2"><PhHashStraight class="size-5" /></span>
+                <span>{{ $t("pages.kanban.addCardNumbersAction") }}</span>
+              </DropdownMenuItem>
+              <div class="border-elevation-3 my-1 border-t"/>
+              <!-- Group 4: Danger zone -->
               <DropdownMenuItem
                 class="bg-elevation-2-hover flex w-full cursor-pointer items-center gap-2 rounded-md px-4 py-1.5 pr-6 text-left text-red-500"
                 @click="deleteBoardModal(boardContent?.id)"
@@ -373,6 +384,24 @@ const allColumnCardsRemoveDialog = useConfirmDialog(removeAllColumnCardsModalVis
 
 const board = useBoard(computed(() => route.params.id as string));
 const { board: boardContent } = board;
+
+const allCardsHaveNumbers = computed(() => {
+  if (!boardContent.value) return true;
+  for (const col of boardContent.value.columns) {
+    for (const card of col.cards) {
+      if (card.sequenceNumber === undefined || card.sequenceNumber === null) {
+        return false;
+      }
+    }
+  }
+  return true;
+});
+
+const backfillBoardCardNumbers = () => {
+  if (!boardContent.value) return;
+  board.backfillCardNumbers();
+};
+
 const {
   bgCustom,
   showCustomBgModal,

@@ -39,6 +39,7 @@
       "exportBoardAction": "导出看板",
       "pinBoardAction": "固定看板",
       "unpinBoardAction": "取消固定看板",
+      "addCardNumbersAction": "添加卡片编号",
       "deleteBoardAction": "删除看板",
       "deleteBoardConfirmation": "您确定要删除看板 '{boardName}' 吗？此操作不可逆。"
     },

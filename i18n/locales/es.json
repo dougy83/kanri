@@ -39,6 +39,7 @@
       "exportBoardAction": "Exportar Tablero",
       "pinBoardAction": "Pegar Tablero",
       "unpinBoardAction": "Despegar Tablero",
+      "addCardNumbersAction": "Añadir números de tarjeta",
       "deleteBoardAction": "Borrar Tablero",
       "deleteBoardConfirmation": "¿Está seguro de querer borrar el tablero '{boardName}'? Esta acción es irreversible."
     },

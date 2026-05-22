@@ -39,6 +39,7 @@
       "exportBoardAction": "Board exportieren",
       "pinBoardAction": "Board anpinnen",
       "unpinBoardAction": "Board lösen",
+      "addCardNumbersAction": "Kartennummern hinzufügen",
       "deleteBoardAction": "Board löschen",
       "deleteBoardConfirmation": "Bist du sicher, dass du das Board '{boardName}' löschen möchtest? Diese Aktion ist irreversibel."
     },

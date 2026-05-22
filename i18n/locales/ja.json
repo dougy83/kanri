@@ -40,6 +40,7 @@
       "exportBoardAction": "ボードをエクスポート",
       "pinBoardAction": "ボードをピン留め",
       "unpinBoardAction": "ピン留めを解除",
+      "addCardNumbersAction": "カード番号を追加",
       "deleteBoardAction": "ボードを削除",
       "deleteBoardConfirmation": "ボード「{boardName}」を削除してもよろしいですか？この操作は取り消せません。"
     },

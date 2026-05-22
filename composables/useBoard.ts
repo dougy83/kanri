@@ -225,6 +225,11 @@ export function useBoard(id: string | Ref<string>) {
     return cards;
   }
 
+  function backfillCardNumbers() {
+    if (!board.value) return;
+    store.backfillCardNumbers(board.value.id);
+  }
+
   // (Global) Card Tags
   const addGlobalTag = (tag: Tag) => {
     if (!board.value) return;
@@ -286,6 +291,7 @@ export function useBoard(id: string | Ref<string>) {
     createCardInFirstColumn,
     findCardColumn,
     getAllCardsExcept,
+    backfillCardNumbers,
 
     // global tags
     addGlobalTag,

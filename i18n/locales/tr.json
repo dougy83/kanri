@@ -39,6 +39,7 @@
       "exportBoardAction": "Panoyu Dışa Aktar",
       "pinBoardAction": "Panoyu Sabitle",
       "unpinBoardAction": "Panonun Sabitlemesini Kaldır",
+      "addCardNumbersAction": "Kart Numaraları Ekle",
       "deleteBoardAction": "Panoyu Sil",
       "deleteBoardConfirmation": "'{boardName}' panosunu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
     },

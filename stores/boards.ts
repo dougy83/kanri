@@ -423,6 +423,40 @@ export const useBoardsStore = defineStore("boards", {
       return null;
     },
 
+    // Assign sequence numbers to any cards missing them on a board, then update the counter
+    backfillCardNumbers(boardId: string) {
+      const b = this.boardById(boardId);
+      if (!b) return;
+
+      let maxSeq = 0;
+      // First pass: find the max existing sequence number
+      for (const col of b.columns) {
+        for (const card of col.cards) {
+          if (card.sequenceNumber && card.sequenceNumber > maxSeq) {
+            maxSeq = card.sequenceNumber;
+          }
+        }
+      }
+
+      let nextAvailable = maxSeq + 1;
+      // Second pass: assign to cards that are missing one
+      for (const col of b.columns) {
+        for (const card of col.cards) {
+          if (card.sequenceNumber === undefined || card.sequenceNumber === null) {
+            card.sequenceNumber = nextAvailable;
+            nextAvailable++;
+          }
+        }
+      }
+
+      // Update the counter to be past the highest assigned
+      if (b.nextSequenceNumber === undefined || b.nextSequenceNumber === null || b.nextSequenceNumber < nextAvailable) {
+        b.nextSequenceNumber = nextAvailable;
+      }
+
+      b.lastEdited = new Date();
+    },
+
     // Initialize nextSequenceNumber on boards that don't have one yet
     _backfillSequenceCounters() {
       for (const board of this.boards) {
