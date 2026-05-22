@@ -146,6 +146,8 @@ yarn generate            # Nuxt static generation
 yarn lint && yarn test
 ```
 
+> ⚠️ **Caution**: `yarn lint` runs with `--fix` by default, which auto-formats many files unrelated to your change. After running it, run `git diff --name-only` to verify only your intended files were modified, and `git checkout -- <file>` to restore any unrelated changes. Alternatively, use `npx eslint .` (without `--fix`) to just check for errors without auto-formatting.
+
 ## Expected Workflow After Edits
 
 1. **If you changed stores/state** → run `yarn lint` (ensures ESLint rules), run `yarn test`
