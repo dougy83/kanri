@@ -295,6 +295,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                   @setCardName="board.setCardName"
                   @duplicateCard="board.duplicateCard"
                   @reorderCards="board.reorderCards"
+                  @cardMovedIn="onCardMovedIn"
                 />
               </Draggable>
               <div class="pr-8">
@@ -694,6 +695,11 @@ const handleAddSubtaskFromNew = (name: string) => {
   board.mutateCard(col.id, card.id, (c) => {
     c.subtaskCardIds = subtaskIds;
   });
+
+  // Record history: link dependency
+  if (newCard.sequenceNumber !== undefined) {
+    board.pushCardHistory(col.id, card.id, 'link depend', String(newCard.sequenceNumber));
+  }
 };
 
 const handleAddSubtaskFromExisting = (subtaskCardId: string) => {
@@ -711,6 +717,15 @@ const handleAddSubtaskFromExisting = (subtaskCardId: string) => {
   board.mutateCard(col.id, card.id, (c) => {
     c.subtaskCardIds = subtaskIds;
   });
+
+  // Record history: link dependency
+  const subtaskCol = board.findCardColumn(subtaskCardId);
+  if (subtaskCol) {
+    const subtaskCard = subtaskCol.cards.find(c => c.id === subtaskCardId);
+    if (subtaskCard?.sequenceNumber !== undefined) {
+      board.pushCardHistory(col.id, card.id, 'link depend', String(subtaskCard.sequenceNumber));
+    }
+  }
 };
 
 const handleRemoveSubtask = (subtaskCardId: string) => {
@@ -724,6 +739,19 @@ const handleRemoveSubtask = (subtaskCardId: string) => {
   board.mutateCard(col.id, card.id, (c) => {
     c.subtaskCardIds = subtaskIds;
   });
+
+  // Record history: unlink dependency
+  const subtaskCol = board.findCardColumn(subtaskCardId);
+  if (subtaskCol) {
+    const subtaskCard = subtaskCol.cards.find(c => c.id === subtaskCardId);
+    if (subtaskCard?.sequenceNumber !== undefined) {
+      board.pushCardHistory(col.id, card.id, 'unlink depend', String(subtaskCard.sequenceNumber));
+    }
+  }
+};
+
+const onCardMovedIn = (columnId: string, cardId: string, targetColumnTitle: string) => {
+  board.pushCardHistory(columnId, cardId, 'move', targetColumnTitle);
 };
 
 const removeCardWithConfirmation = async (

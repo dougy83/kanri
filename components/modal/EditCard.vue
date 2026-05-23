@@ -607,6 +607,74 @@ limitations under the License.
               {{ $t("modals.editCard.tagsEdit") }}
             </button>
           </div>
+
+          <!-- Activity / history section -->
+          <div class="mt-6 flex flex-col pr-6">
+            <button
+              class="flex flex-row items-center gap-2 text-left text-lg font-semibold"
+              @click="historyExpanded = !historyExpanded"
+            >
+              <ChevronDownIcon
+                class="size-4 transition-transform duration-200"
+                :class="{ 'rotate-180': !historyExpanded, 'rotate-0': historyExpanded }"
+              />
+              {{ $t("modals.editCard.activityTitle") }}
+              <span v-if="historyEntries.length > 0" class="text-dim-1 text-sm font-normal">
+                ({{ historyEntries.length }})
+              </span>
+            </button>
+            <div
+              v-if="historyExpanded"
+              class="mt-2 flex max-h-[200px] flex-col gap-1.5 overflow-auto pr-2"
+            >
+              <div
+                v-for="(entry, index) in historyEntriesReversed"
+                :key="index"
+                class="bg-elevation-1 flex flex-row items-start gap-2 rounded-md px-3 py-2 text-sm"
+              >
+                <span
+                  class="shrink-0 rounded-md px-1.5 py-0.5 text-xs font-medium"
+                  :class="historyBadgeClass(entry.act)"
+                >
+                  {{ historyActLabel(entry.act) }}
+                </span>
+                <span class="min-w-0 break-words">
+                  <template v-if="entry.act === 'move'">
+                    {{ $t("modals.editCard.activityMovedTo", { column: entry.what }) }}
+                  </template>
+                  <template v-else-if="entry.act === 'edit text'">
+                    <template v-if="entry.what === 'title'">
+                      {{ $t("modals.editCard.activityEditedTitle") }}
+                    </template>
+                    <template v-else>
+                      {{ $t("modals.editCard.activityEditedDescription") }}
+                    </template>
+                  </template>
+                  <template v-else-if="entry.act === 'link depend'">
+                    {{ $t("modals.editCard.activityLinkedDependency", { seq: entry.what }) }}
+                  </template>
+                  <template v-else-if="entry.act === 'unlink depend'">
+                    {{ $t("modals.editCard.activityUnlinkedDependency", { seq: entry.what }) }}
+                  </template>
+                  <template v-else-if="entry.act === 'card created'">
+                    {{ $t("modals.editCard.activityCardCreated") }}
+                  </template>
+                  <template v-else>
+                    {{ entry.act }} — {{ entry.what }}
+                  </template>
+                </span>
+                <span class="text-dim-3 ml-auto shrink-0 whitespace-nowrap text-xs">
+                  {{ formatHistoryTime(entry.time) }}
+                </span>
+              </div>
+              <div
+                v-if="historyEntries.length === 0"
+                class="text-dim-3 py-2 text-sm"
+              >
+                {{ $t("modals.editCard.activityEmpty") }}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </template>
@@ -697,6 +765,60 @@ const emit = defineEmits<{
 }>();
 
 const { locale } = useI18n();
+
+// --- History / Activity state ---
+const historyExpanded = ref(true);
+
+const historyEntries = computed(() => {
+  return props.card?.history ?? [];
+});
+
+const historyEntriesReversed = computed(() => {
+  return [...historyEntries.value].reverse();
+});
+
+const historyActLabel = (act: string): string => {
+  const labels: Record<string, string> = {
+    move: $t("modals.editCard.activityActMove"),
+    "link depend": $t("modals.editCard.activityActLink"),
+    "unlink depend": $t("modals.editCard.activityActUnlink"),
+    "edit text": $t("modals.editCard.activityActEdit"),
+    "card created": $t("modals.editCard.activityActCreated"),
+  };
+  return labels[act] || act;
+};
+
+const historyBadgeClass = (act: string): string => {
+  const classes: Record<string, string> = {
+    move: "bg-blue-500/20 text-blue-300",
+    "link depend": "bg-green-500/20 text-green-300",
+    "unlink depend": "bg-red-500/20 text-red-300",
+    "edit text": "bg-yellow-500/20 text-yellow-300",
+    "card created": "bg-purple-500/20 text-purple-300",
+  };
+  return classes[act] || "bg-elevation-3 text-dim-2";
+};
+
+const formatHistoryTime = (time: Date | string): string => {
+  const d = typeof time === "string" ? new Date(time) : time;
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+
+  if (diffMins < 1) return $t("modals.editCard.activityJustNow");
+  if (diffMins < 60) return $t("modals.editCard.activityMinutesAgo", { n: diffMins });
+
+  const diffHrs = Math.floor(diffMins / 60);
+  if (diffHrs < 24) return $t("modals.editCard.activityHoursAgo", { n: diffHrs });
+
+  return d.toLocaleDateString(locale.value.replace("_", "-"), {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+// --- End history state ---
 
 const columnID = ref("");
 const { textarea: titleTextArea, input: title } = useTextareaAutosize();

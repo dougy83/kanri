@@ -261,6 +261,7 @@ const emit = defineEmits<{
   (e: "setCardName", columnId: string, cardId: string | undefined, name: string): void;
   (e: "duplicateCard", columnId: string, cardId: string | undefined): void;
   (e: "reorderCards", columnId: string, newCardsOrder: Array<Card>): void;
+  (e: "cardMovedIn", columnId: string, cardId: string, targetColumnTitle: string): void;
 }>();
 
 const { t } = useI18n();
@@ -659,8 +660,15 @@ const keyDownListener = (e: { key: string }) => {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const onDrop = (dropResult: any) => {
+  const { addedIndex, payload, removedIndex } = dropResult;
+
   cards.value = applyDrag(cards.value, dropResult);
   emit("reorderCards", props.id, cards.value);
+
+  // Detect a card moved in FROM another column (not a same-column reorder)
+  if (addedIndex !== null && removedIndex === null && payload?.id) {
+    emit("cardMovedIn", props.id, payload.id, props.title);
+  }
 };
 
 const getChildPayload = (index: number) => {

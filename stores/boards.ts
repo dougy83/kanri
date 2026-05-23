@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 import { defineStore } from "pinia";
-import type { Board, Column, Card, Tag } from "@/types/kanban-types";
+import type { Board, Column, Card, Tag, HistoryEntry } from "@/types/kanban-types";
 import { useTauriStore } from "@/stores/tauriStore";
 import { generateUniqueID } from "@/utils/idGenerator";
 
@@ -283,6 +283,11 @@ export const useBoardsStore = defineStore("boards", {
         col.cards.push(card);
       }
       b.lastEdited = new Date();
+
+      // Record history for the new card
+      if (card.id) {
+        this.pushCardHistory(boardId, columnId, card.id, 'card created', card.name);
+      }
     },
     duplicateCard(boardId: string, columnId: string, cardId: string) {
       const b = this.boardById(boardId);
@@ -292,20 +297,23 @@ export const useBoardsStore = defineStore("boards", {
       const card = col.cards.find(c => c.id === cardId);
       if (!card) return;
 
-      // Clone card while preserving Date objects and creating new array instances
-      let copy: Card;
-      if (typeof structuredClone === "function") {
-        // structuredClone preserves Date instances and performs a deep clone
-        copy = structuredClone(card);
-      } else {
-        // Fallback: shallow-copy primitives and explicitly copy arrays and Date-like fields
-        copy = {
-          ...card,
-          // Normalize dueDate to a Date if it was a string; keep null/undefined as is
-          dueDate: card.dueDate ? new Date(card.dueDate) : null,
-          tasks: card.tasks ? card.tasks.map(t => ({ ...t })) : undefined,
-          tags: card.tags ? card.tags.map(t => ({ ...t })) : undefined,
-        } as Card;
+      // Deep-clone by round-tripping through JSON to strip Vue reactivity proxies,
+      // then rehydrate Date fields that JSON.stringify turns into strings.
+      const raw: Record<string, unknown> = JSON.parse(JSON.stringify(card));
+
+      const copy: Card = {
+        ...raw,
+        // Restore Date objects that JSON serialisation flattened
+        dueDate: raw.dueDate ? new Date(raw.dueDate as string) : null,
+        history: [], // start with fresh history
+      } as unknown as Card;
+
+      // Rehydrate nested arrays that also contain Date-like fields
+      if (Array.isArray(raw.tasks)) {
+        copy.tasks = raw.tasks.map((t: Record<string, unknown>) => ({ ...t })) as Card['tasks'];
+      }
+      if (Array.isArray(raw.tags)) {
+        copy.tags = raw.tags.map((t: Record<string, unknown>) => ({ ...t })) as Card['tags'];
       }
 
       copy.id = generateUniqueID();
@@ -320,6 +328,9 @@ export const useBoardsStore = defineStore("boards", {
 
       col.cards.push(copy);
       b.lastEdited = new Date();
+
+      // Record history for the duplicated card
+      this.pushCardHistory(boardId, columnId, copy.id, 'card created', copy.name);
     },
     deleteCard(boardId: string, columnId: string, cardId: string) {
       const b = this.boardById(boardId);
@@ -375,6 +386,9 @@ export const useBoardsStore = defineStore("boards", {
       targetCol.cards.push(card);
       targetBoard.lastEdited = new Date();
       sourceBoard.lastEdited = new Date();
+
+      // Record history for the moved card
+      this.pushCardHistory(targetBoardId, targetColumnId, cardId, 'move', targetCol.title);
     },
 
     // Create a card in the first column of a board (used for subtask "Add New")
@@ -407,7 +421,34 @@ export const useBoardsStore = defineStore("boards", {
       col.cards.push(card);
       b.lastEdited = new Date();
 
+      // Record history for the new subtask card
+      if (card.id) {
+        this.pushCardHistory(boardId, col.id, card.id, 'card created', card.name);
+      }
+
       return card;
+    },
+
+    // Push a history entry to a card
+    pushCardHistory(boardId: string, columnId: string, cardId: string, act: string, what: string) {
+      const b = this.boardById(boardId);
+      if (!b) return;
+      const col = b.columns.find(c => c.id === columnId);
+      if (!col) return;
+      const card = col.cards.find(c => c.id === cardId);
+      if (!card) return;
+
+      if (!card.history) {
+        card.history = [];
+      }
+
+      const entry: HistoryEntry = {
+        act,
+        what,
+        time: new Date().toISOString(),
+      };
+      card.history.push(entry);
+      b.lastEdited = new Date();
     },
 
     // Find which column a card belongs to

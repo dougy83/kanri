@@ -55,10 +55,17 @@ export declare interface Tag {
   color?: string | null;
 }
 
+export declare interface HistoryEntry {
+  act: string;
+  what: string;
+  time: Date | string;
+}
+
 export declare interface Card {
   color?: string;
   description?: string;
   dueDate?: Date | string | null;
+  history?: Array<HistoryEntry>;
   id?: string;
   isDueDateCounterRelative?: boolean;
   isDueDateCompleted?: boolean;
@@ -95,5 +102,6 @@ export default {
   Board,
   Card,
   Column,
+  HistoryEntry,
   ThemeIdentifiers,
 };

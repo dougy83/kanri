@@ -45,6 +45,12 @@ export function useBoard(id: string | Ref<string>) {
     await store.save();
   }
 
+  // History
+  function pushCardHistory(columnId: string, cardId: string, act: string, what: string) {
+    if (!board.value) return;
+    store.pushCardHistory(board.value.id, columnId, cardId, act, what);
+  }
+
   // Board
   function renameBoard(title: string) {
     if (!board.value) return;
@@ -130,6 +136,7 @@ export function useBoard(id: string | Ref<string>) {
     mutateCard(columnId, cardId, (card) => {
       card.name = name;
     });
+    pushCardHistory(columnId, cardId, 'edit text', 'title');
   };
 
   const setCardDescription = (
@@ -143,6 +150,7 @@ export function useBoard(id: string | Ref<string>) {
     mutateCard(columnId, cardId, (card) => {
       card.description = description;
     });
+    pushCardHistory(columnId, cardId, 'edit text', 'description');
   };
 
   const setCardColor = (
@@ -259,6 +267,9 @@ export function useBoard(id: string | Ref<string>) {
     // lifecycle
     init,
     save,
+
+    // history
+    pushCardHistory,
 
     // board actions
     renameBoard,
