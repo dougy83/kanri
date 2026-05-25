@@ -404,6 +404,69 @@ export const getContrast = (hexcolor: string): string => {
 };
 
 /**
+ * Mapping of Tailwind bg-color-600 classes (used in the EditCard color picker)
+ * to their hex equivalents for color shifting.
+ */
+const TAILWIND_BG_COLOR_600: Record<string, string> = {
+  "bg-pink-600": "#DB2777",
+  "bg-red-600": "#DC2626",
+  "bg-orange-600": "#EA580C",
+  "bg-yellow-600": "#CA8A04",
+  "bg-green-600": "#16A34A",
+  "bg-teal-600": "#0D9488",
+  "bg-blue-600": "#2563EB",
+  "bg-purple-600": "#9333EA",
+};
+
+/**
+ * Shift each RGB channel of a hex color to push it away from the midpoint.
+ * Channels below 127 get brighter (+20), channels above 127 get darker (-20).
+ * This creates a consistent, perceptible difference from the original colour.
+ * @param hex - A hex color string in #RRGGBB format.
+ * @returns The shifted hex color string.
+ */
+function shiftRgbBy20(hex: string): string {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return hex;
+
+  const shift = (v: number) => (v < 127 ? v + 20 : v - 20);
+  return rgbToHex(shift(rgb.r), shift(rgb.g), shift(rgb.b));
+}
+
+/**
+ * Given a card's colour value (Tailwind class, hex string, or empty),
+ * return a slightly shifted hex colour suitable for a subtask card.
+ *
+ * Rules:
+ * - If the input is empty / default ("" or "bg-elevation-2"), return as-is.
+ * - If the input is a Tailwind bg class (e.g. "bg-pink-600"), map it to hex
+ *   and then shift each RGB channel by ±20 (subtract 20; add 20 if < 20).
+ * - If the input is already a hex string, shift it directly.
+ *
+ * @param color - The parent card's colour value.
+ * @returns A shifted hex colour string, or the original value if no shift is possible.
+ */
+export const shiftCardColor = (color: string): string => {
+  if (!color || color === "bg-elevation-2") return color;
+
+  if (color.startsWith("#")) {
+    return shiftRgbBy20(color);
+  }
+
+  if (color.startsWith("bg-") && TAILWIND_BG_COLOR_600[color]) {
+    return shiftRgbBy20(TAILWIND_BG_COLOR_600[color]);
+  }
+
+  // Fall back to cssColorStringToHex if it's a named colour from colourMap
+  const hex = cssColorStringToHex(color);
+  if (hex !== "#000000") {
+    return shiftRgbBy20(hex);
+  }
+
+  return color;
+};
+
+/**
  * Calculates the average RGB color of an image from its source URL.
  * @param imgSrc - The URL of the image.
  * @returns A promise that resolves to an array containing the average R, G, B values.

@@ -323,6 +323,8 @@ import type { Card, Column } from "@/types/kanban-types";
 import type { Ref } from "vue";
 
 import { applyDrag } from "@/utils/drag-n-drop";
+import { shiftCardColor } from "@/utils/colorUtils";
+import { useThemeStore } from "@/stores/theme";
 import emitter from "@/utils/emitter";
 
 import { PhotoIcon } from "@heroicons/vue/24/outline";
@@ -668,7 +670,16 @@ const handleAddSubtaskFromNew = (name: string) => {
   const card = currentlyActiveCardInfo.card;
   if (!card || !card.id) return;
 
-  const newCard = board.createCardInFirstColumn(name);
+  // Resolve the base colour: if the parent card has an explicit colour, use it;
+  // otherwise fall back to the theme's elevation2 (the default card background).
+  let baseColor = card.color ?? "";
+  if (!baseColor || baseColor === "bg-elevation-2") {
+    const themeStore = useThemeStore();
+    baseColor = themeStore.colors?.elevation2 ?? "#27272a";
+  }
+  const subtaskColor = shiftCardColor(baseColor);
+
+  const newCard = board.createCardInFirstColumn(name, subtaskColor);
   if (!newCard || !newCard.id) return;
 
   // Find or create a "Subtask" global tag

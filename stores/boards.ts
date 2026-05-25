@@ -392,7 +392,7 @@ export const useBoardsStore = defineStore("boards", {
     },
 
     // Create a card in the first column of a board (used for subtask "Add New")
-    createCardInFirstColumn(boardId: string, name: string) {
+    createCardInFirstColumn(boardId: string, name: string, color?: string) {
       const b = this.boardById(boardId);
       if (!b) return null;
 
@@ -403,7 +403,7 @@ export const useBoardsStore = defineStore("boards", {
         id: generateUniqueID(),
         name,
         description: "",
-        color: "",
+        color: color ?? "",
         tasks: [],
         dueDate: null,
         isDueDateCounterRelative: false,

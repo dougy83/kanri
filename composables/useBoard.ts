@@ -210,9 +210,9 @@ export function useBoard(id: string | Ref<string>) {
   };
 
   // Subtask helpers
-  function createCardInFirstColumn(name: string) {
+  function createCardInFirstColumn(name: string, color?: string) {
     if (!board.value) return null;
-    return store.createCardInFirstColumn(board.value.id, name);
+    return store.createCardInFirstColumn(board.value.id, name, color);
   }
 
   function findCardColumn(cardId: string) {
