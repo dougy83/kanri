@@ -40,15 +40,35 @@ jobs:
       - name: Build frontend
         run: yarn generate
 
-      - uses: tauri-apps/tauri-action@v0
-        id: release
+      - name: Build Tauri app
+        run: yarn tauri build
+
+      - name: Get app version
+        id: version
+        shell: pwsh
+        run: |
+          $ver = (Get-Content src-tauri/tauri.conf.json | ConvertFrom-Json).version
+          echo "version=$ver" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Create Release
+        shell: pwsh
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tagName: app-v__VERSION__
-          releaseName: 'Kanri v__VERSION__'
-          releaseBody: 'See the assets to download this version and install.'
-          releaseDraft: true
-          prerelease: false
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ver = "${{ steps.version.outputs.version }}"
+          $tag = "app-v$ver"
+          $name = "Kanri v$ver"
 
+          # Collect artifacts
+          $msi = Get-ChildItem src-tauri\target\release\bundle\msi\*.msi -Recurse | Select-Object -First 1
+          $setup = Get-ChildItem src-tauri\target\release\bundle\nsis\*.exe -Recurse | Select-Object -First 1
+          $artifacts = @()
+          if ($msi) { $artifacts += $msi.FullName }
+          if ($setup) { $artifacts += $setup.FullName }
 
+          # Create release with artifacts
+          gh release create $tag $artifacts `
+            --title $name `
+            --notes "See the assets to download this version and install." `
+            --target ${{ github.sha }} `
+            --latest
